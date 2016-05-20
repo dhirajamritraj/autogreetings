@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
@@ -45,23 +46,23 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 						password);
 
 		List<Employee> bdayEmployeeList = getEmployeeDetails();
+		if(!bdayEmployeeList.isEmpty()){
+			for (Employee employee : bdayEmployeeList) {
+				Message msg = new MimeMessage(session);
 
-		for (Employee employee : bdayEmployeeList) {
-			Message msg = new MimeMessage(session);
+				msg.setFrom(new InternetAddress(userName));
+				InternetAddress[] ccAddresses = { new InternetAddress(ccAddress) };
+				InternetAddress[] toAddress = { new InternetAddress(employee.getEmailID()) };
+				msg.setRecipients(Message.RecipientType.TO, toAddress);
+				msg.setRecipients(Message.RecipientType.CC, ccAddresses);
+				msg.setSubject("Happy BirthDay " + employee.getName() + "!");
+				msg.setSentDate(new Date());
+				// set plain text message
+				msg.setContent(prepareGreetingsBody(employee), "text/html");
 
-			msg.setFrom(new InternetAddress(userName));
-			InternetAddress[] ccAddresses = { new InternetAddress(ccAddress) };
-			InternetAddress toAddress = new InternetAddress(
-					employee.getEmailID());
-			msg.setRecipient(Message.RecipientType.TO, toAddress);
-			msg.setRecipients(Message.RecipientType.CC, ccAddresses);
-			msg.setSubject("Happy BirtDay " + employee.getName() + "!!");
-			msg.setSentDate(new Date());
-			// set plain text message
-			msg.setContent(prepareGreetingsBody(employee), "text/html");
-
-			// sends the e-mail
-			Transport.send(msg);
+				// sends the e-mail
+				Transport.send(msg);
+			}
 		}
 
 	}
@@ -69,25 +70,33 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 	private MimeMultipart prepareGreetingsBody(Employee employee) throws MessagingException {
 		MimeMultipart multipart = new MimeMultipart("related");
 
-		// first part (the html)
 		BodyPart messageBodyPart = new MimeBodyPart();
-		String htmlText = "<img src=\"cid:image\">"+prepareTextTemplate(employee);
+		String htmlText = "<body style='background-color:#ffff80;'>"+"<center><h2 style='color:#DB9600;'>"+prepareTextTemplate(employee)+"</h2>"+
+				"<br><img src=\"cid:image\" height='100%' width='100%'></center>";
 		messageBodyPart.setContent(htmlText, "text/html");
-		// add it
 		multipart.addBodyPart(messageBodyPart);
 
-		// second part (the image)
-		messageBodyPart = new MimeBodyPart();
+		
+		
+		Random rand = new Random();
+		int max=4;
+		int min = 1;
+	    int randomNum = rand.nextInt((max - min) + 1) + min;
 
-		File imgaePath = new File(
-				this.getClass().getClassLoader().getResource("com/autogreeting/birthday/pics/bday1.jpg").getPath());
+	    messageBodyPart = new MimeBodyPart();
+		File imgaePath = new File(this.getClass().getClassLoader().getResource("com/autogreeting/birthday/pics/bday"+randomNum+".jpg").getPath());
 		DataSource fds = new FileDataSource(imgaePath);
-
 		messageBodyPart.setDataHandler(new DataHandler(fds));
 		messageBodyPart.setHeader("Content-ID", "<image>");
-
-		// add image to the multipart
 		multipart.addBodyPart(messageBodyPart);
+		
+		messageBodyPart = new MimeBodyPart();
+		File empImg = employee.getEmpImg();
+		DataSource fds1 = new FileDataSource(empImg);
+		messageBodyPart.setDataHandler(new DataHandler(fds1));
+		messageBodyPart.setHeader("Content-ID", "<image1>");
+		multipart.addBodyPart(messageBodyPart);
+		
 		return multipart;
 	}
 
@@ -111,7 +120,7 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 		try {
 			input = new FileInputStream(this.getClass().getClassLoader().getResource("com/autogreeting/birthday/bdayTemplate.properties").getPath());
 			p.load(input);
-			templateText = MessageFormat.format(p.getProperty("template1"), employee.getName());
+			templateText = MessageFormat.format(p.getProperty("template1").replaceAll("\"", ""), employee.getName());
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
