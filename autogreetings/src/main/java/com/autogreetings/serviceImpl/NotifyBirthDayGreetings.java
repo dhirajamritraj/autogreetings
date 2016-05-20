@@ -30,6 +30,7 @@ import javax.mail.internet.MimeMultipart;
 import com.autogreetings.authenticate.AuthenticateGreetingEmployee;
 import com.autogreetings.dao.GreetingsDao;
 import com.autogreetings.daoImpl.GreetingsDaoImpl;
+import com.autogreetings.invoker.GreetingsHelper;
 import com.autogreetings.model.Employee;
 
 public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
@@ -37,13 +38,14 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 	GreetingsDao greetingsDao = new GreetingsDaoImpl();
 
 	@Override
-	public void sendMail(String host, String port, final String userName,
-			final String password, String ccAddress) throws AddressException,
-			MessagingException {
+	public void sendMail(String host, String port, final String userName,final String password) 
+			throws AddressException,MessagingException {
 
 		Session session = AuthenticateGreetingEmployee
 				.authenticateEmployeeForGreetings(host, port, userName,
 						password);
+		
+		InternetAddress[] ccAddressList = getCCAddressList();
 
 		List<Employee> bdayEmployeeList = getEmployeeDetails();
 		if(!bdayEmployeeList.isEmpty()){
@@ -51,10 +53,9 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 				Message msg = new MimeMessage(session);
 
 				msg.setFrom(new InternetAddress(userName));
-				InternetAddress[] ccAddresses = { new InternetAddress(ccAddress) };
 				InternetAddress[] toAddress = { new InternetAddress(employee.getEmailID()) };
 				msg.setRecipients(Message.RecipientType.TO, toAddress);
-				msg.setRecipients(Message.RecipientType.CC, ccAddresses);
+				msg.setRecipients(Message.RecipientType.CC, ccAddressList);
 				msg.setSubject("Happy BirthDay " + employee.getName() + "!");
 				msg.setSentDate(new Date());
 				// set plain text message
@@ -65,6 +66,32 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 			}
 		}
 
+	}
+
+	/**
+	 * @return
+	 * @throws AddressException
+	 */
+	private InternetAddress[] getCCAddressList() throws AddressException {
+		Properties p = new Properties();
+		InputStream input;
+		String ccAddress[] = null;
+		try {
+			input = new FileInputStream(GreetingsHelper.class.getClassLoader().getResource("com/autogreeting/birthday/bdayTemplate.properties").getPath());
+			p.load(input);
+			ccAddress = p.getProperty("cc_mail_ids").replaceAll("\"", "").split(",");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		InternetAddress[] ccAddressList = new InternetAddress[ccAddress.length];
+        for (int i = 0; i < ccAddress.length; i++) {
+               ccAddressList[i] = new InternetAddress(ccAddress[i].toString().replaceAll("\"", ""));
+        }
+		return ccAddressList;
 	}
 
 	private MimeMultipart prepareGreetingsBody(Employee employee) throws MessagingException {
@@ -84,7 +111,7 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 	    int randomNum = rand.nextInt((max - min) + 1) + min;
 
 	    messageBodyPart = new MimeBodyPart();
-		File imgaePath = new File(this.getClass().getClassLoader().getResource("com/autogreeting/birthday/pics/bday"+randomNum+".jpg").getPath());
+		File imgaePath = new File(this.getClass().getClassLoader().getResource("com/autogreeting/birthday/template/bday"+randomNum+".jpg").getPath());
 		DataSource fds = new FileDataSource(imgaePath);
 		messageBodyPart.setDataHandler(new DataHandler(fds));
 		messageBodyPart.setHeader("Content-ID", "<image>");
@@ -103,7 +130,7 @@ public class NotifyBirthDayGreetings extends NotifyCustomGreetings {
 	public List<Employee> getEmployeeDetails() {
 		List<Employee> employeeList = new ArrayList<Employee>();
 		try {
-			employeeList = greetingsDao.getListOfGreetingsEmployee();
+			employeeList = greetingsDao.getListOfBdayEmployee();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

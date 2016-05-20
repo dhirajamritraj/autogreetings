@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import com.autogreetings.service.GreetingsNotifier;
 import com.autogreetings.serviceImpl.NotifyBirthDayGreetings;
+import com.autogreetings.serviceImpl.NotifyWorkAnniversaryGreetings;
 
 public class GreetingsHelper {
 
@@ -16,26 +17,13 @@ public class GreetingsHelper {
 		String host = "smtp.office365.com";
 		String port = "587";
 		String mailFrom = "dhiraj.amritraj@nagarro.com";
-		String password = "";
+		String password = "Windows@05";
 
-		// outgoing message information
-		Properties p = new Properties();
-		InputStream input;
-		String mailCC = null;
+		//GreetingsNotifier mailer = new NotifyBirthDayGreetings();
+		GreetingsNotifier mailer = new NotifyWorkAnniversaryGreetings();
+		
 		try {
-			input = new FileInputStream(GreetingsHelper.class.getClassLoader().getResource("com/autogreeting/birthday/bdayTemplate.properties").getPath());
-			p.load(input);
-			mailCC = p.getProperty("cc_mail_id").replaceAll("\"", "");
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		GreetingsNotifier mailer = new NotifyBirthDayGreetings();
-		try {
-			mailer.sendMail(host, port, mailFrom, password, mailCC);
+			mailer.sendMail(host, port, mailFrom, password);
 			System.out.println("Email sent.");
 		} catch (Exception ex) {
 			System.out.println("Failed to sent email.");

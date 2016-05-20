@@ -17,8 +17,8 @@ import com.autogreetings.model.Employee;
 
 public class GreetingsDaoImpl implements GreetingsDao {
 
-	public List<Employee> getListOfGreetingsEmployee() throws SQLException {
-		String sql = "SELECT name,emp_id,doj,dob,email_id,profile_image FROM greetings_data WHERE "
+	public List<Employee> getListOfBdayEmployee() throws SQLException {
+		String sql = "SELECT name,emp_id,doj,dob,email_id FROM greetings_data WHERE "
 				+ "EXTRACT(month from dob) = EXTRACT(month from current_date())"
 				+ "AND EXTRACT(day from dob) = EXTRACT(day from current_date())";
 
@@ -35,14 +35,13 @@ public class GreetingsDaoImpl implements GreetingsDao {
 			employee.setDoj(rs.getDate("doj"));
 			employee.setDob(rs.getDate("dob"));
 			employee.setEmailID(rs.getString("email_id"));
-			employee.setEmpImg(retrieveImage(rs));
 			employeeList.add(employee);
 		}
 		
 		return employeeList;
 	}
 
-	public File retrieveImage(ResultSet rs) throws SQLException {
+/*	public File retrieveImage(ResultSet rs) throws SQLException {
 		File empImage = null;
 		OutputStream f = null;
 		InputStream in = null;
@@ -60,6 +59,32 @@ public class GreetingsDaoImpl implements GreetingsDao {
 				e.printStackTrace();
 			}
 		return empImage;
+	}*/
+
+	@Override
+	public List<Employee> getListOfWrkAnniversaries() throws SQLException {
+		String sql = "SELECT name,emp_id,doj,dob,email_id FROM greetings_data WHERE "
+				+ "EXTRACT(month from doj) = EXTRACT(month from current_date())"
+				+ "AND EXTRACT(day from doj) = EXTRACT(day from current_date())"
+				+ "AND EMP_ID = 'test'";
+
+		Statement stmt = DBHelper.createConnection().createStatement();
+
+		ResultSet rs = stmt.executeQuery(sql);
+		List<Employee> employeeList = new ArrayList<Employee>();
+		Employee employee = new Employee();
+		
+		while (rs.next()) {
+			employee = new Employee();
+			employee.setName(rs.getString("name"));
+			employee.setEmpID(rs.getString("emp_id"));
+			employee.setDoj(rs.getDate("doj"));
+			employee.setDob(rs.getDate("dob"));
+			employee.setEmailID(rs.getString("email_id"));
+			employeeList.add(employee);
+		}
+		
+		return employeeList;
 	}
 
 }
